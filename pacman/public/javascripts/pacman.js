@@ -1811,7 +1811,8 @@ Ghost.prototype.steer = function() {
         {
          //   this.setTarget();
             if (tileMap.isNextTileFloor(this.tile, this.nextDir)){
-                this.setDir(this.nextDirEnum);
+                if(oppDirEnum != this.nextDirEnum)
+                  this.setDir(this.nextDirEnum);
                 return;
             }
 }
