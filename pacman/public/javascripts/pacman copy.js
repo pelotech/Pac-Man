@@ -1267,13 +1267,7 @@ var screen = (function() {
 
         socket.on('pacman_direction', function(data) {
           pacman.setNextDir(data);
-          for (var i = ghosts.length - 1; i >= 0; i--) {
-              if(ghosts[i].mode ==GHOST_OUTSIDE)
-                //if (tileMap.isNextTileFloor(ghosts[i].tile, data))
-                    ghosts[i].setNextDir(data);
-          };
         });
-
     };
 
     return {
@@ -1525,9 +1519,6 @@ var Ghost = function() {
     // inherit data from Actor
     Actor.apply(this);
     this.randomScatter = false;
-
-    this.nextDir = {};
-
 };
 
 // inherit functions from Actor class
@@ -1623,43 +1614,10 @@ Ghost.prototype.onEaten = function() {
 };
 
 // move forward one step
-// Ghost.prototype.step = function() {
-//     this.setPos(this.pixel.x+this.dir.x, this.pixel.y+this.dir.y);
-//     return 1;
-// };
-Ghost.prototype.setNextDir = function(nextDirEnum) {
-    setDirFromEnum(this.nextDir, nextDirEnum);
-    this.nextDirEnum = nextDirEnum;
+Ghost.prototype.step = function() {
+    this.setPos(this.pixel.x+this.dir.x, this.pixel.y+this.dir.y);
+    return 1;
 };
-
-Ghost.prototype.step = (function(){
-
-    // return sign of a number
-    var sign = function(x) {
-        if (x<0) return -1;
-        if (x>0) return 1;
-        return 0;
-    };
-
-    return function() {
-
-        // identify the axes of motion
-        var a = (this.dir.x != 0) ? 'x' : 'y'; // axis of motion
-        var b = (this.dir.x != 0) ? 'y' : 'x'; // axis perpendicular to motion
-
-        // Don't proceed past the middle of a tile if facing a wall
-        var stop = this.distToMid[a] == 0 && !tileMap.isNextTileFloor(this.tile, this.dir);
-        if (!stop)
-            this.pixel[a] += this.dir[a];
-
-        // Drift toward the center of the track (a.k.a. cornering)
-        this.pixel[b] += sign(this.distToMid[b]);
-
-        this.commitPos();
-        return stop ? 0 : 1;
-    };
-})();
-
 
 // ghost home-specific path steering
 Ghost.prototype.homeSteer = (function(){
@@ -1749,19 +1707,18 @@ Ghost.prototype.steer = function() {
     var oppDirEnum = (this.dirEnum+2)%4; // current opposite direction enum
     var actor;                           // actor whose corner we will target
 
-
     // reverse direction if commanded
-    // if (this.sigReverse && this.mode == GHOST_OUTSIDE) {
-    //     // reverse direction only if we've reached a new tile
-    //     if ((this.dirEnum == DIR_UP && this.tilePixel.y == tileSize-1) ||
-    //         (this.dirEnum == DIR_DOWN && this.tilePixel.y == 0) ||
-    //         (this.dirEnum == DIR_LEFT && this.tilePixel.x == tileSize-1) ||
-    //         (this.dirEnum == DIR_RIGHT && this.tilePixel.x == 0)) {
-    //             this.sigReverse = false;
-    //             this.setDir(oppDirEnum);
-    //             return;
-    //     }
-    // }
+    if (this.sigReverse && this.mode == GHOST_OUTSIDE) {
+        // reverse direction only if we've reached a new tile
+        if ((this.dirEnum == DIR_UP && this.tilePixel.y == tileSize-1) ||
+            (this.dirEnum == DIR_DOWN && this.tilePixel.y == 0) ||
+            (this.dirEnum == DIR_LEFT && this.tilePixel.x == tileSize-1) ||
+            (this.dirEnum == DIR_RIGHT && this.tilePixel.x == 0)) {
+                this.sigReverse = false;
+                this.setDir(oppDirEnum);
+                return;
+        }
+    }
 
     // special map-specific steering when going to, entering, pacing inside, or leaving home
     this.homeSteer();
@@ -1781,44 +1738,39 @@ Ghost.prototype.steer = function() {
     // get surrounding tiles and their open indication
     openTiles = getOpenSurroundTiles(this.tile, this.dirEnum);
 
-    // if (this.scared) {
-    //     // choose a random turn
-    //     dirEnum = Math.floor(Math.random()*4);
-    //     while (!openTiles[dirEnum])
-    //         dirEnum = (dirEnum+1)%4;
-    //     this.targetting = false;
-    // }
-    // else {
+    if (this.scared) {
+        // choose a random turn
+        dirEnum = Math.floor(Math.random()*4);
+        while (!openTiles[dirEnum])
+            dirEnum = (dirEnum+1)%4;
+        this.targetting = false;
+    }
+    else {
         // target ghost door
         if (this.mode == GHOST_GOING_HOME) {
             this.targetTile.x = tileMap.doorTile.x;
             this.targetTile.y = tileMap.doorTile.y;
         }
         // target corner when scattering
-        // else if (!this.elroy && ghostCommander.getCommand() == GHOST_CMD_SCATTER) {
+        else if (!this.elroy && ghostCommander.getCommand() == GHOST_CMD_SCATTER) {
 
-        //     actor = this.isScatterBrain() ? actors[Math.floor(Math.random()*4)] : this;
+            actor = this.isScatterBrain() ? actors[Math.floor(Math.random()*4)] : this;
 
-        //     this.targetTile.x = actor.cornerTile.x;
-        //     this.targetTile.y = actor.cornerTile.y;
-        //     this.targetting = 'corner';
-        // }
+            this.targetTile.x = actor.cornerTile.x;
+            this.targetTile.y = actor.cornerTile.y;
+            this.targetting = 'corner';
+        }
         // use custom function for each ghost when in attack mode
         else
-        {
-         //   this.setTarget();
-            if (tileMap.isNextTileFloor(this.tile, this.nextDir)){
-                this.setDir(this.nextDirEnum);
-                return;
-            }
-}
+            this.setTarget();
+
         // edit openTiles to reflect the current map's special contraints
         if (tileMap.constrainGhostTurns)
             tileMap.constrainGhostTurns(this.tile, openTiles);
 
         // choose direction that minimizes distance to target
         dirEnum = getTurnClosestToTarget(this.tile, this.targetTile, openTiles);
-    // }
+    }
 
     // commit the direction
     this.setDir(dirEnum);
