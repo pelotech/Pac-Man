@@ -1265,12 +1265,14 @@ var screen = (function() {
             e.preventDefault();
         };
 
-        socket.on('pacman_direction', function(data) {
-          pacman.setNextDir(data);
-          for (var i = ghosts.length - 1; i >= 0; i--) {
-              if(ghosts[i].mode ==GHOST_OUTSIDE)
-                //if (tileMap.isNextTileFloor(ghosts[i].tile, data))
-                    ghosts[i].setNextDir(data);
+        socket.on('player_direction', function(data) {
+          if(data.player == 0){
+            pacman.setNextDir(data.direction);
+          }
+          else{
+            var ghost = ghosts[data.player - 1];
+            if(ghost.mode ==GHOST_OUTSIDE)
+              ghost.setNextDir(data.direction);
           };
         });
 

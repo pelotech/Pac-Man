@@ -33,9 +33,15 @@ app.configure 'production', ->
 
 app.get '/', routes.index
 
-io.sockets.on 'connection', (socket) ->
-  socket.on 'pacman_direction', (data) =>
-    io.sockets.emit 'pacman_direction', data
+nextPlayer = 0
+io.sockets.on 'connection', (socket) =>
+  socket.player = nextPlayer
+  console.log socket.player
+  nextPlayer++
+  console.log socket.player
+  
+  socket.on 'pacman_direction', (direction) =>
+    io.sockets.emit 'player_direction', direction:direction, player:socket.player
 
 app.listen 3000
 console.log 'Express server listening on port %d in %s mode', app.address().port, app.settings.env
