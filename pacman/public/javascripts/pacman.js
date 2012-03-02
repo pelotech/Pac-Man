@@ -1633,16 +1633,17 @@ Ghost.prototype.setNextDir = function(nextDirEnum) {
 };
 
 Ghost.prototype.step = (function(){
-
     // return sign of a number
     var sign = function(x) {
         if (x<0) return -1;
         if (x>0) return 1;
         return 0;
     };
-
     return function() {
-
+        if(this.mode != GHOST_OUTSIDE) {
+            this.setPos(this.pixel.x + this.dir.x, this.pixel.y + this.dir.y);
+            return 1;
+        };
         // identify the axes of motion
         var a = (this.dir.x != 0) ? 'x' : 'y'; // axis of motion
         var b = (this.dir.x != 0) ? 'y' : 'x'; // axis perpendicular to motion
@@ -1812,16 +1813,16 @@ Ghost.prototype.steer = function() {
                 return;
             }
 }
-        // edit openTiles to reflect the current map's special contraints
-        if (tileMap.constrainGhostTurns)
-            tileMap.constrainGhostTurns(this.tile, openTiles);
-
-        // choose direction that minimizes distance to target
-        dirEnum = getTurnClosestToTarget(this.tile, this.targetTile, openTiles);
-    // }
-
-    // commit the direction
-    this.setDir(dirEnum);
+    //     // edit openTiles to reflect the current map's special contraints
+    //     if (tileMap.constrainGhostTurns)
+    //         tileMap.constrainGhostTurns(this.tile, openTiles);
+    // 
+    //     // choose direction that minimizes distance to target
+    //     dirEnum = getTurnClosestToTarget(this.tile, this.targetTile, openTiles);
+    // // }
+    // 
+    // // commit the direction
+    // this.setDir(dirEnum);
 };
 
 //@line 1 "src/Player.js"
