@@ -2888,7 +2888,7 @@ var newGameState = (function() {
 
 var readyState =  (function(){
     var frames;
-    var duration = 20;
+    var duration = 2;
     
     return {
         init: function() {
@@ -2905,9 +2905,9 @@ var readyState =  (function(){
             screen.renderer.drawActors();
         },
         update: function() {
-            //if (frames > duration*60)
+            if (frames > duration*60)
                 game.switchState(playState);
-            //else
+            else
                 frames++;
         },
     };
