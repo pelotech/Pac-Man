@@ -33,10 +33,12 @@ app.configure 'production', ->
 
 app.get '/', routes.index
 
-nextPlayer = 0
+gameState = 'menuState'
+
 players = [false, false, false, false, false]
 
 io.sockets.on 'connection', (socket) =>
+  unless gameState is 'menuState' then return
   if players[4] is false
     player = 4
   else 
@@ -51,6 +53,8 @@ io.sockets.on 'connection', (socket) =>
 
   socket.on 'disconnect', =>
     players[player] = false
+    if players[4] is false
+      gameState = 'menuState'
 
   socket.on 'player_direction', (data) =>
     time = new Date()
@@ -61,8 +65,10 @@ io.sockets.on 'connection', (socket) =>
     console.log data.playerObj
 
   socket.on 'gameSwitchState', (data) ->
+    gameState = data
     io.sockets.emit 'gameSwitchState', data
-
+  socket.on 'startGame', () ->
+    io.sockets.emit 'startGame'
 app.listen 3000
 console.log 'Express server listening on port %d in %s mode', app.address().port, app.settings.env
 

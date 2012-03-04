@@ -2596,7 +2596,9 @@ var game = (function(){
             nextFrameTime = (new Date).getTime();
         },
         restart: function() {
-            this.switchState(menuState);
+            //this.switchState(menuState);
+            this.state = menuState;
+            this.state.init()
             this.resume();
         },
         pause: function() {
@@ -2625,7 +2627,8 @@ var game = (function(){
 
         // switches to another game state
         switchState: function(nextState,fadeDuration, continueUpdate1, continueUpdate2) {
-            this.state = (fadeDuration) ? fadeNextState(this.state,nextState,fadeDuration, continueUpdate1, continueUpdate2) : nextState;
+            //this.state = (fadeDuration) ? fadeNextState(this.state,nextState,fadeDuration, continueUpdate1, continueUpdate2) : nextState;
+            this.state = nextState;
             this.state.init();
         },
 
