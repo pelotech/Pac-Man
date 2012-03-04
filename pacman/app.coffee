@@ -34,34 +34,14 @@ app.configure 'production', ->
 app.get '/', routes.index
 
 nextPlayer = 0
-players = [false, false, false, false, false]
-
 io.sockets.on 'connection', (socket) =>
-  if players[4] is false
-    player = 4
-  else 
-    i = 0
-    while players[i] is true
-      i++ 
-    player = i
-
-  players[player] = true
-
-  socket.emit 'set_player', player
-
-  socket.on 'disconnect', =>
-    players[player] = false
-
-  socket.on 'player_direction', (data) =>
-    time = new Date()
-    time = time.getTime()
-    data.time = time
-
-    io.sockets.emit 'player_direction', data
-    console.log data.playerObj
-
-  socket.on 'gameSwitchState', (data) ->
-    io.sockets.emit 'gameSwitchState', data
+  socket.player = nextPlayer
+  console.log socket.player
+  nextPlayer++
+  console.log socket.player
+  
+  socket.on 'pacman_direction', (direction) =>
+    io.sockets.emit 'player_direction', direction:direction, player:socket.player
 
 app.listen 3000
 console.log 'Express server listening on port %d in %s mode', app.address().port, app.settings.env
