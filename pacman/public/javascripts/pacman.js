@@ -12,6 +12,11 @@
 
 var socket = io.connect(window.location);
 
+var player = null;
+socket.on('set_player', function (playerId){
+  player = playerId;
+});
+
 //@line 1 "src/TileMap.js"
 //////////////////////////////////////////////////////////////////////////////////////
 // Directions
@@ -1258,7 +1263,7 @@ var screen = (function() {
                 default: return;
             }
 
-            socket.emit('pacman_direction', direction);
+            socket.emit('player_direction', {player:player, direction:direction});
   
             // prevent default action for arrow keys
             // (don't scroll page with arrow keys)
@@ -1266,14 +1271,11 @@ var screen = (function() {
         };
 
         socket.on('player_direction', function(data) {
-          if(data.player == 0){
-            pacman.setNextDir(data.direction);
-          }
-          else{
-            var ghost = ghosts[data.player - 1];
-            if(ghost.mode ==GHOST_OUTSIDE)
-              ghost.setNextDir(data.direction);
-          };
+            var actor = actors[data.player];
+            actor.setNextDir(data.direction);
+            // if(ghost.mode ==GHOST_OUTSIDE)
+            //             ghost.setNextDir(data.direction);
+         // };
         });
 
     };
@@ -2786,9 +2788,18 @@ var menuState = {
         for (i=0; i<5; i++)
             actors[i].reset();
         screen.renderer.drawMap();
+        newGameMessage = function () {
+          newGameState.nextMap = MAP_PACMAN;
+          game.switchState(newGameState,60,true,false);
+        };
+        _this = this;
+        socket.on('newGame', function() { newGameMessage.call(_this); });
         screen.onClick = function() {
-            newGameState.nextMap = MAP_PACMAN;
-            game.switchState(newGameState,60,true,false);
+            if(player == 4){
+              socket.emit('newGame');
+            }
+            // newGameState.nextMap = MAP_PACMAN;
+            // game.switchState(newGameState,60,true,false);
             screen.onClick = undefined;
         };
     },

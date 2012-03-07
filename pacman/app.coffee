@@ -33,16 +33,42 @@ app.configure 'production', ->
 
 app.get '/', routes.index
 
-nextPlayer = 0
-io.sockets.on 'connection', (socket) =>
-  socket.player = nextPlayer
-  console.log socket.player
-  nextPlayer++
-  console.log socket.player
-  
-  socket.on 'pacman_direction', (direction) =>
-    io.sockets.emit 'player_direction', direction:direction, player:socket.player
+gameState = 'menuState'
 
+players = [false, false, false, false, false]
+
+io.sockets.on 'connection', (socket) =>
+  unless gameState is 'menuState' then return
+  if players[4] is false
+    player = 4
+  else 
+    i = 0
+    while players[i] is true
+      i++ 
+    player = i
+
+  players[player] = true
+
+  socket.emit 'set_player', player
+
+  socket.on 'disconnect', =>
+    players[player] = false
+    if players[4] is false
+      gameState = 'menuState'
+
+  socket.on 'player_direction', (data) =>
+    time = new Date()
+    time = time.getTime()
+    data.time = time
+
+    io.sockets.emit 'player_direction', data
+
+  socket.on 'gameSwitchState', (data) ->
+    gameState = data
+    io.sockets.emit 'gameSwitchState', data
+  socket.on 'newGame', () ->
+    io.sockets.emit 'newGame'
+    
 app.listen 3000
-console.log 'Express server listening on port %d in %s mode', app.address().port, app.settings.env
+console.log 'Express server listening on port %d in %s mode', app.address()?.port, app.settings.env
 
