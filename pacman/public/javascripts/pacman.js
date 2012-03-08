@@ -13,9 +13,16 @@
 var socket = io.connect(window.location);
 
 var player = null;
+var activePlayers = {};
 socket.on('set_player', function (playerId){
   player = playerId;
 });
+socket.on('set_players', function (players){
+  activePlayers = players;
+  if (activePlayers[4]!= true)
+    window.location.reload();
+});
+
 
 //@line 1 "src/TileMap.js"
 //////////////////////////////////////////////////////////////////////////////////////
@@ -291,7 +298,7 @@ renderers.Common.prototype = {
         this.ctx.lineCap = "round";
         this.ctx.lineJoin = "round";
         for (i=0;i<5;i++)
-            if (actors[i].isDrawTarget)
+            if (actors[i].isDrawTarget & activePlayers[i])
                 actors[i].drawTarget(this.ctx);
     },
 
@@ -455,8 +462,11 @@ renderers.Common.prototype = {
         var i;
         // draw such that pacman appears on top
         if (energizer.isActive()) {
-            for (i=0; i<4; i++)
+            for (i=0; i<4; i++){
+              if(activePlayers[i]){
                 this.drawGhost(ghosts[i]);
+              }
+            }
             if (!energizer.showingPoints())
                 this.drawPacman();
             else
@@ -465,8 +475,11 @@ renderers.Common.prototype = {
         // draw such that pacman appears on bottom
         else {
             this.drawPacman();
-            for (i=3; i>=0; i--) 
+            for (i=3; i>=0; i--){ 
+              if(activePlayers[i]){
                 this.drawGhost(ghosts[i]);
+              }
+            }
         }
     },
 
@@ -2785,8 +2798,9 @@ var fadeRendererState = function (currState, nextRenderer, frameDuration) {
 var menuState = {
     init: function() {
         game.switchMap(MAP_MENU);
-        for (i=0; i<5; i++)
+        for (i=0; i<5; i++){
             actors[i].reset();
+          }
         screen.renderer.drawMap();
         newGameMessage = function () {
           newGameState.nextMap = MAP_PACMAN;
@@ -2807,7 +2821,11 @@ var menuState = {
         screen.blitMap();
         if (game.score != 0 && game.highScore != 0)
             screen.renderer.drawScore();
-        screen.renderer.drawMessage("click to play","#FF0");
+        if (player == 4){
+          screen.renderer.drawMessage("click to play","#FF0");
+        } else {
+          screen.renderer.drawMessage("waiting for pacman", "#FF0");
+        }
         screen.renderer.drawActors();
     },
     update: function() {
@@ -2959,6 +2977,7 @@ var playState = {
     isPacmanCollide: function() {
         var i,g;
         for (i = 0; i<4; i++) {
+          if(activePlayers[i]){
             g = ghosts[i];
             if (g.tile.x == pacman.tile.x && g.tile.y == pacman.tile.y && g.mode == GHOST_OUTSIDE) {
                 if (g.scared) { // eat ghost
@@ -2971,6 +2990,7 @@ var playState = {
                     game.switchState(deadState);
                 return true;
             }
+          }
         }
         return false;
     },

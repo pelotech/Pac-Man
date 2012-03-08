@@ -33,12 +33,13 @@ app.configure 'production', ->
 
 app.get '/', routes.index
 
-gameState = 'menuState'
+games = []
+games.push {}
+openGame = 0
+games[openGame].players = [false, false, false, false, false]
 
-players = [false, false, false, false, false]
-
-io.sockets.on 'connection', (socket) =>
-  unless gameState is 'menuState' then return
+io.sockets.on 'connection', (socket) =>  
+  
   if players[4] is false
     player = 4
   else 
@@ -50,9 +51,11 @@ io.sockets.on 'connection', (socket) =>
   players[player] = true
 
   socket.emit 'set_player', player
+  io.sockets.emit 'set_players', players
 
   socket.on 'disconnect', =>
     players[player] = false
+    io.sockets.emit 'set_players', players
     if players[4] is false
       gameState = 'menuState'
 
@@ -63,9 +66,6 @@ io.sockets.on 'connection', (socket) =>
 
     io.sockets.emit 'player_direction', data
 
-  socket.on 'gameSwitchState', (data) ->
-    gameState = data
-    io.sockets.emit 'gameSwitchState', data
   socket.on 'newGame', () ->
     io.sockets.emit 'newGame'
     
