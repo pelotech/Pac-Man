@@ -1,9 +1,9 @@
 express = require('express')
-routes = require('./routes')
 
 app = module.exports = express.createServer()
 io = require('socket.io').listen(app)
 
+PACMAN = 4
 app.configure ->
   app.set 'views', __dirname + '/views'
   app.set 'view engine', 'jade'
@@ -31,44 +31,57 @@ app.configure 'development', ->
 app.configure 'production', ->
   app.use express.errorHandler()
 
-app.get '/', routes.index
+games = {}
+# openGame = 0
+# games[openGame].players = [false, false, false, false, false]
 
-games = []
-games.push {}
-openGame = 0
-games[openGame].players = [false, false, false, false, false]
-
-io.sockets.on 'connection', (socket) =>  
+app.get '/', (req, res)->
+  getOpenGame (gameId) =>
+    generateSocket gameId, ->
+      res.render 'index', title: 'Pac-Man', game:gameId
   
-  if players[4] is false
-    player = 4
-  else 
-    i = 0
-    while players[i] is true
-      i++ 
-    player = i
+app.get '/:gameId', (req, res) ->
+  res.render 'index', title: 'Express' 
 
-  players[player] = true
+getOpenGame = (cb) ->
+  cb 0
 
-  socket.emit 'set_player', player
-  io.sockets.emit 'set_players', players
+generateSocket = (id, cb) ->
+  if games[id] then return cb games[id]
+  game = games[id] = {}
+  ions = game.ions = io.of("/#{id}")
+  cb game
+  players = games[id].players = [false, false, false, false, false]
+  ions.on 'connection', (socket) =>  
+      console.log "Foo"
+      if players[PACMAN] is false
+        player = PACMAN
+      else
+        i = 0
+        while players[i] is true
+          i++ 
+        player = i
 
-  socket.on 'disconnect', =>
-    players[player] = false
-    io.sockets.emit 'set_players', players
-    if players[4] is false
-      gameState = 'menuState'
+      players[player] = true
 
-  socket.on 'player_direction', (data) =>
-    time = new Date()
-    time = time.getTime()
-    data.time = time
+      socket.emit 'set_player', player
+      ions.emit 'set_players', players
 
-    io.sockets.emit 'player_direction', data
+      socket.on 'disconnect', =>
+        players[player] = false
+        ions.emit 'set_players', players
+        if players[4] is false
+          gameState = 'menuState'
 
-  socket.on 'newGame', () ->
-    io.sockets.emit 'newGame'
-    
+      socket.on 'player_direction', (data) =>
+        time = new Date()
+        time = time.getTime()
+        data.time = time
+
+        ions.emit 'player_direction', data
+
+      socket.on 'newGame', () ->
+        ions.emit 'newGame'
+
 app.listen 3000
 console.log 'Express server listening on port %d in %s mode', app.address()?.port, app.settings.env
-

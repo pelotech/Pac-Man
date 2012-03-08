@@ -10,7 +10,7 @@
 
 (function(){
 
-var socket = io.connect(window.location);
+//var socket = io.connect(window.location);
 
 var player = null;
 var activePlayers = {};
