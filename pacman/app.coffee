@@ -4,6 +4,9 @@ app = module.exports = express.createServer()
 io = require('socket.io').listen(app)
 
 PACMAN = 4
+PLAYING = "Playing"
+LOBBY = "Lobby"
+
 app.configure ->
   app.set 'views', __dirname + '/views'
   app.set 'view engine', 'jade'
@@ -31,28 +34,27 @@ app.configure 'development', ->
 app.configure 'production', ->
   app.use express.errorHandler()
 
-games = {}
+games = []
 # openGame = 0
 # games[openGame].players = [false, false, false, false, false]
 
 app.get '/', (req, res)->
-  getOpenGame (gameId) =>
-    generateSocket gameId, ->
-      res.render 'index', title: 'Pac-Man', game:gameId
-  
-app.get '/:gameId', (req, res) ->
-  res.render 'index', title: 'Express' 
+  getOpenGame (game) ->
+    res.render 'index', title: 'Pac-Man', game:game.id
 
 getOpenGame = (cb) ->
-  cb 0
-
-generateSocket = (id, cb) ->
+  openGames = (game for game in games when game.state is LOBBY)
+  if openGames[0]? then return cb openGames[0]
+  generateGame(games.length, cb)
+  
+generateGame = (id, cb) ->
   if games[id] then return cb games[id]
-  game = games[id] = {}
+  game = games[id] = { state:LOBBY, id:id }
   ions = game.ions = io.of("/#{id}")
   cb game
+  
   players = games[id].players = [false, false, false, false, false]
-  ions.on 'connection', (socket) =>  
+  ions.on 'connection', (socket) ->  
       console.log "Foo"
       if players[PACMAN] is false
         player = PACMAN
@@ -71,9 +73,9 @@ generateSocket = (id, cb) ->
         players[player] = false
         ions.emit 'set_players', players
         if players[4] is false
-          gameState = 'menuState'
+          game.state = LOBBY
 
-      socket.on 'player_direction', (data) =>
+      socket.on 'player_direction', (data) ->
         time = new Date()
         time = time.getTime()
         data.time = time
@@ -81,6 +83,7 @@ generateSocket = (id, cb) ->
         ions.emit 'player_direction', data
 
       socket.on 'newGame', () ->
+        game.state = PLAYING
         ions.emit 'newGame'
 
 app.listen 3000
