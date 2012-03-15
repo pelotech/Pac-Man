@@ -78,7 +78,7 @@ generateGame = (id, cb) ->
       socket.on 'player_direction', (data) ->
         time = new Date()
         time = time.getTime()
-        data.time = time
+        data.object.time = time
 
         ions.emit 'player_direction', data
 

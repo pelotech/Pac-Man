@@ -1286,18 +1286,9 @@ var screen = (function() {
         socket.on('player_direction', function(data) {
             var actor = actors[data.player];
             if(data.object.time > actor.time) {
-              actor.pixel.x = data.object.pixel.x;
-              actor.pixel.y = data.object.pixel.y;
-              actor.tile.x = data.object.tile.x;
-              actor.tile.y = data.object.tile.y;
-              actor.tilePixel.x = data.object.tilePixel.x;
-              actor.tilePixel.y = data.object.tilePixel.y;
-              actor.steps = data.object.steps;
-              actor.time = data.object.time;
-            };
-            
-            actor.setNextDir(data.direction);
-            
+              _(actor).extend(data.object)
+              actor.setNextDir(data.direction);
+            };            
             // if(ghost.mode ==GHOST_OUTSIDE)
             //             ghost.setNextDir(data.direction);
          // };
@@ -1371,6 +1362,7 @@ var Actor = function() {
 
     this.frames = 0;        // frame count
     this.steps = 0;         // step count
+    this.time = 0;
 };
 
 // reset to initial position and direction
